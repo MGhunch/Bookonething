@@ -131,16 +131,16 @@ function OrangeBlock({ label }: { label: string }) {
 
 function MockCalendar({ name, iconKey }: { name: string; iconKey: string | null }) {
   const IconComp = ICONS.find(i => i.key === iconKey)?.Icon || Car;
-  const [todayDate, setTodayDate] = useState<Date | null>(null);
-  useEffect(() => { setTodayDate(new Date()); }, []);
-  const today = todayDate ?? new Date(0);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const today = mounted ? new Date() : new Date(0);
   const day = today.getDay();
   const monday = new Date(today);
   monday.setDate(today.getDate() - (day === 0 ? 6 : day - 1));
   const weekDates = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(monday); d.setDate(monday.getDate() + i); return d;
   });
-  const todayIdx = todayDate ? (day === 0 ? 6 : day - 1) : -1;
+  const todayIdx = mounted ? (day === 0 ? 6 : day - 1) : -1;
   const days = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
   const hours = [8,9,10,11,12,13,14,15,16,17];
   const fmtH = (h: number) => h === 12 ? "12pm" : h < 12 ? `${h}am` : `${h-12}pm`;
@@ -314,7 +314,7 @@ export default function SetupPage() {
             {side === "front" && (
               <>
                 <OrangeBlock label="Set up" />
-                <div style={{ fontSize: SIZE_XL, fontWeight: W_BOLD, color: DARK, letterSpacing: "-0.8px", lineHeight: 1.15, fontFamily: SYS, marginBottom: "8px" }}>
+                <div style={{ fontSize: SIZE_XL, fontWeight: W_BOLD, color: DARK, letterSpacing: "-0.8px", lineHeight: 1.15, fontFamily: SYS, marginBottom: "8px", paddingRight: "4px" }}>
                   What are you sharing?
                 </div>
                 <div style={{ fontSize: SIZE_BASE, color: GREY, fontFamily: SYS, fontWeight: W_REGULAR, marginBottom: "36px" }}>
@@ -503,7 +503,7 @@ export default function SetupPage() {
             {side === "back" && (
               <>
                 <OrangeBlock label="Rules" />
-                <div style={{ fontSize: SIZE_XL, fontWeight: W_BOLD, color: DARK, letterSpacing: "-0.8px", lineHeight: 1.15, fontFamily: SYS, marginBottom: "8px" }}>
+                <div style={{ fontSize: SIZE_XL, fontWeight: W_BOLD, color: DARK, letterSpacing: "-0.8px", lineHeight: 1.15, fontFamily: SYS, marginBottom: "8px", paddingRight: "4px" }}>
                   How will you share it?
                 </div>
                 <div style={{ fontSize: SIZE_BASE, color: GREY, fontFamily: SYS, fontWeight: W_REGULAR, marginBottom: "36px" }}>
