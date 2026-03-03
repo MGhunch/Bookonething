@@ -202,8 +202,9 @@ export default function Calendar({ thing, orgName, ownerSlug, thingSlug, booking
   const [cancelTarget, setCancelTarget] = useState<{ id: string; timeStr: string } | null>(null);
   const [toast, setToast]             = useState({ visible: false, message: "" });
 
-  const scrollRef  = useRef<HTMLDivElement>(null);
-  const calRef     = useRef<HTMLDivElement>(null);
+  const scrollRef   = useRef<HTMLDivElement>(null);
+  const calRef      = useRef<HTMLDivElement>(null);
+  const hasScrolled = useRef(false);
   const [calH, setCalH] = useState(300);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const seenTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -271,15 +272,19 @@ export default function Calendar({ thing, orgName, ownerSlug, thingSlug, booking
     return () => ro.disconnect();
   }, []);
 
+  // Reset the scroll gate whenever the user navigates to a different day or week
+  useEffect(() => { hasScrolled.current = false; }, [selectedDay, weekOffset]);
+
   useEffect(() => {
-    if (!scrollRef.current) return;
+    if (!scrollRef.current || hasScrolled.current) return;
     // 24/7 resource → open at 8am. Otherwise open at avail_start.
     const availStart = (thing.avail_start as string) ?? "09:00";
     const scrollTo = availStart === "00:00" ? "08:00" : availStart;
     const [h, m] = scrollTo.split(":").map(Number);
     const startSlotIdx = h * 2 + (m >= 30 ? 1 : 0);
     scrollRef.current.scrollTop = Math.max(0, slotY(startSlotIdx) - 16);
-  }, [calH]);
+    hasScrolled.current = true;
+  }, [calH, selectedDay, weekOffset]);
 
   const showToast = useCallback((msg: string) => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
@@ -555,7 +560,7 @@ export default function Calendar({ thing, orgName, ownerSlug, thingSlug, booking
           <div
             ref={scrollRef}
             className="cal-scroll"
-            style={{ position: "absolute", inset: 0, overflowY: "scroll", padding: "10px 16px 10px 16px" }}
+            style={{ position: "absolute", inset: 0, overflowY: "auto", padding: "10px 16px 10px 16px" }}
           >
             <div style={{ position: "relative", height: `${totalH}px`, paddingLeft: "40px" }}>
 
@@ -592,7 +597,7 @@ export default function Calendar({ thing, orgName, ownerSlug, thingSlug, booking
                   const height = groupH(group.startIdx, group.endIdx);
 
                   if (group.type === "booking") return (
-                    <div key={gi} onClick={() => showToast("Sorry, not available.")}
+                    <div key={`booking-${group.startIdx}`} onClick={() => showToast("Sorry, not available.")}
                       style={{ position: "absolute", top, left: 0, right: 0, height, background: ORANGE_BOOKED, borderRadius: "8px", display: "flex", alignItems: "flex-start", padding: "8px 11px", cursor: "pointer" }}>
                       <span style={{ fontSize: "11px", fontWeight: W_MEDIUM, color: ORANGE_DARK }}>{group.name}</span>
                     </div>
@@ -600,7 +605,7 @@ export default function Calendar({ thing, orgName, ownerSlug, thingSlug, booking
 
                   if (group.type === "yours") return (
                     <div
-                    key={gi}
+                    key={`yours-${group.startIdx}`}
                     onClick={() => {
                       const s = ALL_SLOTS[group.startIdx];
                       const e = ALL_SLOTS[group.endIdx];
@@ -630,7 +635,7 @@ export default function Calendar({ thing, orgName, ownerSlug, thingSlug, booking
                     }
 
                     return (
-                      <div key={gi}
+                      <div key={`pill-${group.startIdx}`}
                         className={ready ? "ready-pop" : ""}
                         onClick={ready ? handleSelectionTap : undefined}
                         style={{ position: "absolute", top, left: 0, right: 0, height,
@@ -668,7 +673,7 @@ export default function Calendar({ thing, orgName, ownerSlug, thingSlug, booking
                   const ready = active && phase === S_READY;
 
                   return (
-                    <button key={gi}
+                    <button key={`half-${group.startIdx}`}
                       className={ready ? "ready-pop" : ""}
                       onClick={ready ? handleSelectionTap : () => handleSlot(slot)}
                       style={{ position: "absolute", top, left: 0, right: 0, height: `${SLOT_H}px`,
